@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Tic Tac Toe</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style/style.css">
+
+</head>
+<body>
+
+<div class="background"></div>
+
+<main class="app">
+
+<header class="header">
+<h1>Tic Tac Toe</h1>
+
+<button id="themeToggle" class="icon-btn">
+<img src="https://cdn-icons-png.flaticon.com/512/869/869869.png" alt="theme">
+</button>
+</header>
+
+<section class="score-panel">
+<div class="score">
+<span>X</span>
+<p id="scoreX">0</p>
+</div>
+
+<div class="score">
+<span>Draw</span>
+<p id="scoreDraw">0</p>
+</div>
+
+<div class="score">
+<span>O</span>
+<p id="scoreO">0</p>
+</div>
+</section>
+
+<p id="statusText" class="status">Player X Turn</p>
+
+<section id="board" class="board"></section>
+
+<button id="restartBtn" class="restart">Restart Game</button>
+
+</main>
+
+<!-- WIN MODAL -->
+<div id="modal" class="modal hidden">
+<div class="modal-content">
+<h2 id="modalText"></h2>
+<button id="playAgain">Play Again</button>
+</div>
+</div>
+
+<audio id="clickSound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+<audio id="winSound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+
+<script src="js/script.js"></script>
+</body>
+</html>
