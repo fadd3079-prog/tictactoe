@@ -1,42 +1,30 @@
-/* =========================
-   GAME STATE
-========================= */
-
 let boardState = Array(9).fill("");
 let currentPlayer = "X";
+let startingPlayer = "X";
 let gameActive = true;
 
 const board = document.getElementById("board");
 const statusText = document.getElementById("statusText");
-
 const modal = document.getElementById("modal");
 const modalText = document.getElementById("modalText");
-
 const clickSound = document.getElementById("clickSound");
 const winSound = document.getElementById("winSound");
 
-/* SCORE */
-let scores = JSON.parse(localStorage.getItem("tttScores")) || {
-  X:0,
-  O:0,
-  draw:0
-};
+let scores = { X: 0, O: 0, draw: 0 };
 
-/* =========================
-   INITIALIZE GAME
-========================= */
-
-function initializeGame(){
+function initializeGame() {
   board.innerHTML = "";
-
   boardState = Array(9).fill("");
   gameActive = true;
-  currentPlayer = "X";
 
-  for(let i=0;i<9;i++){
+  currentPlayer = startingPlayer;
+
+  for (let i = 0; i < 9; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
     cell.dataset.index = i;
+    cell.setAttribute("role", "button");
+    cell.setAttribute("tabindex", "0");
     board.appendChild(cell);
   }
 
@@ -44,180 +32,144 @@ function initializeGame(){
   renderScores();
 }
 
-/* =========================
-   HANDLE CLICK (EVENT DELEGATION)
-========================= */
+function playAudio(audioElement) {
+  try {
+    audioElement.currentTime = 0;
+    const playPromise = audioElement.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {}
+}
 
-function handleCellClick(e){
+function handleCellClick(e) {
   const cell = e.target;
-  if(!cell.classList.contains("cell")) return;
+  if (!cell.classList.contains("cell")) return;
 
   const index = cell.dataset.index;
+  if (boardState[index] !== "" || !gameActive) return;
 
-  if(boardState[index] !== "" || !gameActive) return;
-
-  clickSound.currentTime = 0;
-  clickSound.play();
-
+  playAudio(clickSound);
   boardState[index] = currentPlayer;
 
-  checkWinner();
+  if (checkWinner()) return;
+
   switchPlayer();
   updateUI();
 }
 
-/* =========================
-   SWITCH PLAYER
-========================= */
+board.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    handleCellClick(e);
+  }
+});
 
-function switchPlayer(){
+function switchPlayer() {
   currentPlayer = currentPlayer === "X" ? "O" : "X";
 }
 
-/* =========================
-   WIN CHECK
-========================= */
-
 const winPatterns = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6]
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
 ];
 
-function checkWinner(){
-
-  for(const pattern of winPatterns){
-    const [a,b,c] = pattern;
-
-    if(
+function checkWinner() {
+  for (const pattern of winPatterns) {
+    const [a, b, c] = pattern;
+    if (
       boardState[a] &&
       boardState[a] === boardState[b] &&
       boardState[a] === boardState[c]
-    ){
+    ) {
       gameActive = false;
       highlightWin(pattern);
       declareWinner(boardState[a]);
-      return;
+      return true;
     }
   }
 
-  if(!boardState.includes("")){
+  if (!boardState.includes("")) {
     gameActive = false;
     declareDraw();
+    return true;
   }
+
+  return false;
 }
 
-/* =========================
-   UI UPDATE
-========================= */
-
-function updateUI(){
+function updateUI() {
   const cells = document.querySelectorAll(".cell");
-
-  cells.forEach((cell,i)=>{
+  cells.forEach((cell, i) => {
     cell.textContent = boardState[i];
+    if (boardState[i] !== "") {
+      cell.setAttribute("aria-label", `Cell ${i} diisi oleh ${boardState[i]}`);
+    }
   });
 
-  if(gameActive){
+  if (gameActive) {
     statusText.textContent = `Player ${currentPlayer} Turn`;
   }
 }
 
-/* =========================
-   WIN / DRAW
-========================= */
-
-function highlightWin(pattern){
+function highlightWin(pattern) {
   const cells = document.querySelectorAll(".cell");
-  pattern.forEach(i => cells[i].classList.add("win"));
+  pattern.forEach((i) => cells[i].classList.add("win"));
 }
 
-function declareWinner(player){
+function declareWinner(player) {
   scores[player]++;
-  saveScores();
-
-  winSound.currentTime = 0;
-  winSound.play();
-
+  playAudio(winSound);
   showModal(`Player ${player} Wins!`);
 }
 
-function declareDraw(){
+function declareDraw() {
   scores.draw++;
-  saveScores();
   showModal("It's a Draw!");
 }
 
-/* =========================
-   MODAL
-========================= */
-
-function showModal(text){
+function showModal(text) {
   modalText.textContent = text;
   modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
   renderScores();
 }
 
-document.getElementById("playAgain").onclick = () =>{
+document.getElementById("playAgain").onclick = () => {
   modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+
+  startingPlayer = startingPlayer === "X" ? "O" : "X";
   resetGame();
 };
 
-/* =========================
-   RESET GAME
-========================= */
-
-function resetGame(){
+function resetGame() {
   board.style.opacity = 0;
-
-  setTimeout(()=>{
+  setTimeout(() => {
     initializeGame();
     board.style.opacity = 1;
-  },250);
+  }, 250);
 }
 
-/* =========================
-   SCORE STORAGE
-========================= */
-
-function saveScores(){
-  localStorage.setItem("tttScores", JSON.stringify(scores));
-}
-
-function renderScores(){
+function renderScores() {
   document.getElementById("scoreX").textContent = scores.X;
   document.getElementById("scoreO").textContent = scores.O;
   document.getElementById("scoreDraw").textContent = scores.draw;
 }
 
-/* =========================
-   DARK MODE
-========================= */
-
 const themeToggle = document.getElementById("themeToggle");
 
-if(localStorage.getItem("theme")==="dark"){
-  document.body.classList.add("dark");
-}
-
-themeToggle.addEventListener("click",()=>{
+themeToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
-
-  localStorage.setItem(
-    "theme",
-    document.body.classList.contains("dark") ? "dark":"light"
-  );
 });
-
-/* =========================
-   EVENTS
-========================= */
 
 board.addEventListener("click", handleCellClick);
 document.getElementById("restartBtn").addEventListener("click", resetGame);
-
-/* =========================
-   START
-========================= */
 
 initializeGame();
